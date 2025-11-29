@@ -9,17 +9,21 @@ st.write("Upload an image or enter text to generate explanations, notes, and MCQ
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Go to", ["Home", "OCR", "Explanation", "MCQs", "Dashboard"])
 
+
+# ---------------------- HOME PAGE ----------------------
 if page == "Home":
     st.header("Welcome to AI StudyVision")
     st.write("This AI tool helps you learn faster using OCR + AI + MCQs.")
-elif page == "OCR":
 
+
+# ---------------------- OCR PAGE ----------------------
+elif page == "OCR":
     st.header("📷 OCR - Image to Text")
 
     uploaded_image = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
 
     if uploaded_image is not None:
-        st.image(uploaded_image, caption="Uploaded Image", use_column_width=True)
+        st.image(uploaded_image, caption="Uploaded Image", use_container_width=True)
 
         import ocr_engine.ocr as ocr
 
@@ -30,11 +34,39 @@ elif page == "OCR":
             st.subheader("📝 Extracted Text")
             st.write(text)
 
-    st.header("📷 OCR - Image to Text")
+
+# ---------------------- EXPLANATION PAGE ----------------------
 elif page == "Explanation":
     st.header("🧠 AI Explanation")
+
+    input_text = st.text_area("Enter the extracted text or your question:")
+
+    if st.button("Generate Explanation"):
+        if input_text.strip() == "":
+            st.warning("Please enter some text first.")
+        else:
+            with st.spinner("Generating explanation..."):
+                st.subheader("📘 Explanation")
+                st.write("⚠ AI engine will be added soon. This is a placeholder output.")
+
+
+# ---------------------- MCQ PAGE ----------------------
 elif page == "MCQs":
     st.header("❓ MCQ Generator")
+
+    mcq_text = st.text_area("Enter topic or extracted text for MCQ generation:")
+
+    if st.button("Generate MCQs"):
+        if mcq_text.strip() == "":
+            st.warning("Please enter some text first.")
+        else:
+            st.subheader("Generated MCQs")
+            st.write("⚠ MCQ engine will be added soon. This is a placeholder.")
+
+
+# ---------------------- DASHBOARD PAGE ----------------------
 elif page == "Dashboard":
     st.header("📊 Progress Dashboard")
+    st.write("Dashboard will show accuracy, weak topics, and daily activity soon.")
+
 
