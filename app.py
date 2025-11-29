@@ -42,7 +42,7 @@ st.markdown("""
 
 from PIL import Image
 
-logo = Image.open("assets/logo.png")
+logo = Image.open("assets/logo.png.png")
 st.image(logo, width=120)
 
 st.markdown("""
@@ -75,13 +75,14 @@ st.write("Upload an image or enter text to generate explanations, notes, and MCQ
 
 # Sidebar
 with st.sidebar:
-    st.image("assets/logo.png", width=80)
+    st.image("assets/logo.png.png", width=80)
     st.markdown("### **AI StudyVision**")
 
 page = st.sidebar.radio(
     "Go to",
-    ["Home", "OCR", "Explanation", "MCQs", "Notes", "Chat", "Dashboard"]
+    ["Home", "OCR", "Explanation", "MCQs", "Notes", "Chat", "Auto Study Mode", "Dashboard"]
 )
+
 
 
 
@@ -353,6 +354,50 @@ elif page == "Dashboard":
     else:
         st.write("No quiz results saved yet.")
 
+
+
+# auto study mode
+elif page == "Auto Study Mode":
+    st.header("⚡ One-Click Auto Study Mode")
+
+    uploaded_pdf = st.file_uploader("Upload your study PDF", type=["pdf"])
+
+    if uploaded_pdf is not None:
+        import pdfplumber
+
+        with st.spinner("🔍 Extracting text from PDF..."):
+            text = ""
+            with pdfplumber.open(uploaded_pdf) as pdf:
+                for page in pdf.pages:
+                    page_text = page.extract_text()
+                    if page_text:
+                        text += page_text + "\n"
+
+        st.success("PDF Extracted Successfully!")
+
+        if st.button("✨ Generate Everything"):
+            with st.spinner("AI is generating Explanation, Notes & MCQs..."):
+
+                from ai_engine.llm_engine import ask_ai
+
+                explanation = ask_ai(
+                    f"Explain this content in simple words with examples:\n\n{text}"
+                )
+                notes = ask_ai(
+                    f"Convert this into clean, structured study notes:\n\n{text}"
+                )
+                mcqs = ask_ai(
+                    f"Generate 5 MCQs with options and correct answers based on:\n\n{text}"
+                )
+
+            st.subheader("📘 Explanation")
+            st.write(explanation)
+
+            st.subheader("📝 Notes")
+            st.write(notes)
+
+            st.subheader("❓ MCQs")
+            st.write(mcqs)
 
 
 
