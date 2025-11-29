@@ -45,11 +45,14 @@ elif page == "Explanation":
         if input_text.strip() == "":
             st.warning("Please enter some text first.")
         else:
-            with st.spinner("Generating explanation..."):
-                st.subheader("📘 Explanation")
-                st.write("⚠ AI engine will be added soon. This is a placeholder output.")
+            with st.spinner("AI generating explanation..."):
+                from ai_engine.llm_engine import ask_ai
+                answer = ask_ai(
+                    f"Explain this in simple words with examples:\n\n{input_text}"
+                )
 
-
+            st.subheader("📘 Explanation")
+            st.write(answer)
 # ---------------------- MCQ PAGE ----------------------
 elif page == "MCQs":
     st.header("❓ MCQ Generator")
@@ -60,8 +63,13 @@ elif page == "MCQs":
         if mcq_text.strip() == "":
             st.warning("Please enter some text first.")
         else:
+            with st.spinner("AI generating MCQs..."):
+                from ai_engine.llm_engine import generate_mcqs
+                mcqs_output = generate_mcqs(mcq_text)
+
             st.subheader("Generated MCQs")
-            st.write("⚠ MCQ engine will be added soon. This is a placeholder.")
+            st.write(mcqs_output)
+
 
 
 # ---------------------- DASHBOARD PAGE ----------------------
