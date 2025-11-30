@@ -50,4 +50,3 @@ def ask_ai(prompt: str) -> str:
 
     # koi aur strange format
     return f"❌ Unexpected AI response: {data}"
-
