@@ -11,10 +11,8 @@ def ask_ai(prompt: str) -> str:
     }
 
     payload = {
-        "model": "meta-llama/Meta-Llama-3.1-8B-Instruct",  # yahan apna model
-        "messages": [
-            {"role": "user", "content": prompt}
-        ],
+        "model": "meta-llama/Meta-Llama-3.1-8B-Instruct",
+        "messages": [{"role": "user", "content": prompt}],
         "max_tokens": 800,
         "temperature": 0.4,
     }
@@ -24,29 +22,26 @@ def ask_ai(prompt: str) -> str:
     except Exception as e:
         return f"❌ Network error while calling AI: {e}"
 
-    # JSON parse
     try:
         data = res.json()
-    except Exception:
+    except:
         return f"❌ API response not JSON:\n{res.text}"
 
-    # YAHAN PAR SAFE HANDLING
     if "choices" in data and data["choices"]:
-        # kuch providers message ko dict rakhte hain, kuch object – dono handle:
-        msg = data["choices"][0].get("message") or data["choices"][0].get("delta", {})
-        content = msg.get("content")
-        if content:
-            return content
-        else:
-            return f"❌ AI gave empty content: {data}"
+        choice = data["choices"][0]
 
-    # agar error field hai
+        # 🔥 DeepInfra LLaMA output
+        if "text" in choice:
+            return choice["text"]
+
+        # 🔥 OpenAI-style output
+        if "message" in choice:
+            return choice["message"].get("content", "")
+
+        return f"❌ Unknown AI output: {data}"
+
     if "error" in data:
-        # kuch APIs: {"error": {"message": "..."}}
         err = data["error"]
-        if isinstance(err, dict):
-            return "❌ AI Error: " + err.get("message", str(err))
-        return "❌ AI Error: " + str(err)
+        return "❌ AI Error: " + (err.get("message") if isinstance(err, dict) else str(err))
 
-    # koi aur strange format
     return f"❌ Unexpected AI response: {data}"
