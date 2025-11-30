@@ -1,68 +1,38 @@
+import os
 import requests
-import json
+from groq import Groq
+
+# If USE_LOCAL=true → Ollama
+# If not → Groq Cloud
+USE_LOCAL = os.getenv("USE_LOCAL", "false").lower() == "true"
 
 def ask_ai(prompt):
-    url = "http://localhost:11434/api/generate"
 
-    payload = {
-        "model": "llama3.2",
-        "prompt": prompt,
-        "stream": False
-    }
+    if USE_LOCAL:
+        # ---------- LOCAL OLLAMA ----------
+        url = "http://localhost:11434/api/generate"
+        payload = {
+            "model": "llama3.2",
+            "prompt": prompt,
+            "stream": False
+        }
 
-    response = requests.post(url, json=payload)
+        try:
+            r = requests.post(url, json=payload)
+            data = r.json()
+            return data.get("response", "❌ No response from Ollama")
+        except Exception as e:
+            return f"❌ Local Ollama error: {e}"
 
-    data = response.json()
+    else:
+        # ---------- CLOUD GROQ ----------
+        try:
+            client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+            chat = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            return chat.choices[0].message.content
 
-    return data["response"]
-def generate_mcqs(text):
-    import json
-
-    prompt = f"""
-    From the following text, generate EXACTLY 5 multiple choice questions.
-
-    Format JSON only:
-    {{
-      "mcqs": [
-        {{
-          "question": "text",
-          "options": ["A", "B", "C", "D"],
-          "correct_index": 1
-        }}
-      ]
-    }}
-
-    Text:
-    {text}
-    """
-
-    raw = ask_ai(prompt)
-
-    start = raw.find("{")
-    end = raw.rfind("}")
-
-    if start == -1 or end == -1:
-        return []
-
-    json_str = raw[start:end+1]
-
-    try:
-        data = json.loads(json_str)
-        return data.get("mcqs", [])
-    except Exception:
-        return []
-
-def generate_notes(text):
-    prompt = f"""
-    Create short study notes for this topic.
-
-    Text:
-    {text}
-
-    Format:
-    - 5 to 8 bullet points
-    - Very simple language
-    - Highlight important terms with **bold**
-    """
-
-    return ask_ai(prompt)
+        except Exception as e:
+            return f"❌ Cloud AI Error: {e}"
