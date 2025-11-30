@@ -1,9 +1,7 @@
+streamlit
 pytesseract
 Pillow
 pdfplumber
 requests
 python-pptx
-paddleocr
-paddlepaddle==2.6.1
-opencv-python-headless
-Pillow
+numpy==1.26.4
