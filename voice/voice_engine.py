@@ -10,3 +10,4 @@ def text_to_speech_bytes(text: str):
         return fp.read()
     except Exception as e:
         return None
+
