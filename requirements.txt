@@ -1,0 +1,3 @@
+easy-ocr
+torch
+torchvision
