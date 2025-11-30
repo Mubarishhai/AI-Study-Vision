@@ -22,26 +22,57 @@ def ask_ai(prompt: str) -> str:
     except Exception as e:
         return f"❌ Network error while calling AI: {e}"
 
+    # Debug: status + raw body (logs me dikhega)
+    try:
+        print("AI STATUS_CODE:", res.status_code)
+        print("AI RAW RESPONSE:", res.text[:1000])  # 1000 chars tak hi
+    except Exception:
+        pass
+
+    # JSON parse
     try:
         data = res.json()
-    except:
+    except Exception:
         return f"❌ API response not JSON:\n{res.text}"
 
-    if "choices" in data and data["choices"]:
-        choice = data["choices"][0]
+    # ------- SAFE CHOICES HANDLING -------
 
-        # 🔥 DeepInfra LLaMA output
-        if "text" in choice:
-            return choice["text"]
+    choices = data.get("choices")
+    if isinstance(choices, list) and len(choices) > 0 and isinstance(choices[0], dict):
+        choice = choices[0]
 
-        # 🔥 OpenAI-style output
-        if "message" in choice:
-            return choice["message"].get("content", "")
+        content = None
 
-        return f"❌ Unknown AI output: {data}"
+        # OpenAI / DeepInfra chat-style:
+        msg = choice.get("message")
+        if isinstance(msg, dict):
+            content = msg.get("content")
+
+        # Streaming-style delta:
+        if not content:
+            delta = choice.get("delta")
+            if isinstance(delta, dict):
+                content = delta.get("content")
+
+        # Text-style completion:
+        if not content:
+            content = choice.get("text")
+
+        if content:
+            return content
+
+        # Yaha aa gaya matlab structure ajeeb hai
+        return f"❌ AI gave empty/unknown content structure: {data}"
+
+    # ------- ERROR FIELD HANDLING -------
 
     if "error" in data:
         err = data["error"]
-        return "❌ AI Error: " + (err.get("message") if isinstance(err, dict) else str(err))
+        if isinstance(err, dict):
+            msg = err.get("message") or err.get("detail") or str(err)
+            return "❌ AI Error: " + msg
+        return "❌ AI Error: " + str(err)
+
+    # ------- FALLBACK -------
 
     return f"❌ Unexpected AI response: {data}"
