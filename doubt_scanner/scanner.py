@@ -1,34 +1,26 @@
-import base64
 import requests
 
-GROQ_API_KEY = "YOUR_API_KEY"
+OCR_API_KEY = "helloworld"   # Safe free API key
 
 def scan_doubt(image_file):
-    url = "https://api.groq.com/openai/v1/chat/completions"
-
-    # Convert image to base64
-    img_bytes = image_file.read()
-    img_b64 = base64.b64encode(img_bytes).decode()
+    url = "https://api.ocr.space/parse/image"
 
     payload = {
-        "model": "llama-3.2-vision",
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": "Extract the text exactly from this image"},
-                    {
-                        "type": "image_url",
-                        "image_url": f"data:image/jpeg;base64,{img_b64}"
-                    }
-                ]
-            }
-        ]
+        'apikey': OCR_API_KEY,
+        'language': 'eng',
+        'scale': True,
+        'OCREngine': 2
     }
 
-    headers = {"Authorization": f"Bearer {GROQ_API_KEY}"}
+    files = {
+        'file': (image_file.name, image_file, image_file.type)
+    }
 
-    response = requests.post(url, json=payload, headers=headers)
+    response = requests.post(url, data=payload, files=files)
     result = response.json()
 
-    return result["choices"][0]["message"]["content"]
+    # 🔥 Correct OCR output extraction
+    try:
+        return result["ParsedResults"][0]["ParsedText"]
+    except Exception as e:
+        return f"❌ OCR Error: Could not extract text.\n{e}"
