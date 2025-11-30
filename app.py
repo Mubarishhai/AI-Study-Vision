@@ -1,4 +1,5 @@
 #    author  :  Shaikh Mubarish Maheboob
+import time
 
 import streamlit as st
 from PIL import Image
@@ -70,9 +71,11 @@ page = st.sidebar.radio(
         "PPT Generator",
         "Doubt Scanner",
         "PDF Highlighter",
+        "Study Session",
         "Dashboard",
     ]
 )
+
 
 # =================== PAGES START ===================
 
@@ -450,6 +453,54 @@ Text:
 
             st.subheader("📌 Highlighted Content")
             st.markdown(highlighted)
+
+
+# ---------------------- STUDY SESSION TIMER + MUSIC ----------------------
+elif page == "Study Session":
+    st.header("⏳ Study Session Timer + 🎵 Motivation Music")
+
+    # Timer state
+    if "start_time" not in st.session_state:
+        st.session_state.start_time = None
+
+    if "elapsed_time" not in st.session_state:
+        st.session_state.elapsed_time = 0
+
+    # Timer Start
+    if st.button("▶ Start Session"):
+        st.session_state.start_time = time.time()
+        st.success("🔥 Session Started! Stay focused.")
+
+    # Timer Stop
+    if st.button("⏹ Stop Session"):
+        if st.session_state.start_time:
+            st.session_state.elapsed_time += time.time() - st.session_state.start_time
+            st.session_state.start_time = None
+        st.success("⏳ Session Ended!")
+
+    # Live Timer
+    if st.session_state.start_time:
+        elapsed = time.time() - st.session_state.start_time + st.session_state.elapsed_time
+    else:
+        elapsed = st.session_state.elapsed_time
+
+    minutes = int(elapsed // 60)
+    seconds = int(elapsed % 60)
+
+    st.subheader(f"🕒 Time Spent: **{minutes:02d}:{seconds:02d}**")
+
+    st.markdown("---")
+
+    # Motivation Music
+    st.subheader("🎵 Motivation Music (Hindi Lo-Fi)")
+
+    music_url = "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/lofi_hindi_motivational.mp3"
+
+    st.audio(music_url)
+
+
+
+
 
 
 # ---------------- DASHBOARD ----------------
