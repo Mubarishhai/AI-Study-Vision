@@ -494,7 +494,8 @@ elif page == "Study Session":
     # Motivation Music
     st.subheader("🎵 Motivation Music (Hindi Lo-Fi)")
 
-    music_url = "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/lofi_hindi_motivational.mp3"
+    music_url = "https://cdn.pixabay.com/audio/2022/11/15/audio_2c39bc0977.mp3"
+
 
     st.audio(music_url)
 
