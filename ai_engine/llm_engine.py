@@ -1,38 +1,20 @@
 import os
-import requests
 from groq import Groq
 
-# If USE_LOCAL=true → Ollama
-# If not → Groq Cloud
-USE_LOCAL = os.getenv("USE_LOCAL", "false").lower() == "true"
+# Load API key from environment variable
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+
+client = Groq(api_key=GROQ_API_KEY)
 
 def ask_ai(prompt):
+    response = client.chat.completions.create(
+        model="llama3-8b-8192",
+        messages=[
+            {"role": "user", "content": prompt}
+        ],
+        temperature=0.3,
+        max_tokens=1024,
+    )
 
-    if USE_LOCAL:
-        # ---------- LOCAL OLLAMA ----------
-        url = "http://localhost:11434/api/generate"
-        payload = {
-            "model": "llama3.2",
-            "prompt": prompt,
-            "stream": False
-        }
+    return response.choices[0].message["content"]
 
-        try:
-            r = requests.post(url, json=payload)
-            data = r.json()
-            return data.get("response", "❌ No response from Ollama")
-        except Exception as e:
-            return f"❌ Local Ollama error: {e}"
-
-    else:
-        # ---------- CLOUD GROQ ----------
-        try:
-            client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-            chat = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[{"role": "user", "content": prompt}]
-            )
-            return chat.choices[0].message.content
-
-        except Exception as e:
-            return f"❌ Cloud AI Error: {e}"
