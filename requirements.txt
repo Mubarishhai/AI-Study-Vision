@@ -3,4 +3,7 @@ Pillow
 pdfplumber
 requests
 python-pptx
-
+paddleocr
+paddlepaddle==2.6.1
+opencv-python-headless
+Pillow
