@@ -1,18 +1,9 @@
-import easyocr
+import pytesseract
 from PIL import Image
-import numpy as np
 import io
 
-reader = easyocr.Reader(['en'], gpu=False)
-
 def scan_doubt(image_file):
-    # Converting uploaded image to array
-    image_bytes = image_file.read()
-    image = Image.open(io.BytesIO(image_bytes))
-    image = np.array(image)
+    img = Image.open(io.BytesIO(image_file.read()))
+    text = pytesseract.image_to_string(img)
+    return text
 
-    # OCR extract text
-    result = reader.readtext(image, detail=0)
-    extracted_text = "\n".join(result)
-
-    return extracted_text
