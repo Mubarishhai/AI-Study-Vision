@@ -1,78 +1,131 @@
 import os
+import json
 import requests
 
-DEEPINFRA_KEY = os.getenv("DEEPINFRA_API_KEY")  # ya jo bhi env var use kar rahe ho
-BASE_URL = "https://api.deepinfra.com/v1/openai/chat/completions"
+# Groq API key ko env variable se lo (Streamlit Secrets se aayegi)
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-def ask_ai(prompt: str) -> str:
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_MODEL = "llama3-8b-8192"   # Fast + smart
+
+
+def _call_groq_chat(prompt: str) -> dict:
+    """
+    Groq API ko safe tarike se call karta hai
+    JSON response return karta hai (ya error dict).
+    """
+
+    if not GROQ_API_KEY:
+        return {"error": "GROQ_API_KEY missing. Set it in Streamlit Secrets."}
+
     headers = {
-        "Authorization": f"Bearer {DEEPINFRA_KEY}",
+        "Authorization": f"Bearer {GROQ_API_KEY}",
         "Content-Type": "application/json",
     }
 
     payload = {
-        "model": "meta-llama/Meta-Llama-3.1-8B-Instruct",
-        "messages": [{"role": "user", "content": prompt}],
+        "model": GROQ_MODEL,
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
         "max_tokens": 800,
         "temperature": 0.4,
     }
 
     try:
-        res = requests.post(BASE_URL, json=payload, headers=headers, timeout=60)
+        res = requests.post(GROQ_URL, json=payload, headers=headers, timeout=60)
     except Exception as e:
-        return f"❌ Network error while calling AI: {e}"
+        return {"error": f"Network error while calling Groq: {e}"}
 
-    # Debug: status + raw body (logs me dikhega)
-    try:
-        print("AI STATUS_CODE:", res.status_code)
-        print("AI RAW RESPONSE:", res.text[:1000])  # 1000 chars tak hi
-    except Exception:
-        pass
-
-    # JSON parse
     try:
         data = res.json()
     except Exception:
-        return f"❌ API response not JSON:\n{res.text}"
+        return {"error": f"Groq non-JSON response: {res.text}"}
 
-    # ------- SAFE CHOICES HANDLING -------
+    return data
 
-    choices = data.get("choices")
-    if isinstance(choices, list) and len(choices) > 0 and isinstance(choices[0], dict):
-        choice = choices[0]
 
-        content = None
+def ask_ai(prompt: str) -> str:
+    """
+    Simple text answer (Explanation, Chat, Doubt solution, etc.)
+    """
 
-        # OpenAI / DeepInfra chat-style:
-        msg = choice.get("message")
-        if isinstance(msg, dict):
-            content = msg.get("content")
+    data = _call_groq_chat(prompt)
 
-        # Streaming-style delta:
-        if not content:
-            delta = choice.get("delta")
-            if isinstance(delta, dict):
-                content = delta.get("content")
+    # error field aa gaya
+    if "error" in data:
+        err = data["error"]
+        return f"❌ AI Error: {err}"
 
-        # Text-style completion:
-        if not content:
-            content = choice.get("text")
-
+    # normal OpenAI-style response
+    if "choices" in data and data["choices"]:
+        msg = data["choices"][0].get("message", {})
+        content = msg.get("content")
         if content:
             return content
 
-        # Yaha aa gaya matlab structure ajeeb hai
-        return f"❌ AI gave empty/unknown content structure: {data}"
-
-    # ------- ERROR FIELD HANDLING -------
-
-    if "error" in data:
-        err = data["error"]
-        if isinstance(err, dict):
-            msg = err.get("message") or err.get("detail") or str(err)
-            return "❌ AI Error: " + msg
-        return "❌ AI Error: " + str(err)
-
-    # ------- FALLBACK -------
-
+    # kuch unexpected mila
     return f"❌ Unexpected AI response: {data}"
+
+
+def generate_mcqs(text: str):
+    """
+    Text se EXACT 5 MCQs JSON format me banata hai.
+    """
+
+    prompt = f"""
+    From the following text, generate EXACTLY 5 multiple choice questions.
+
+    Reply in PURE JSON only, with this exact structure:
+
+    {{
+      "mcqs": [
+        {{
+          "question": "Question text here",
+          "options": ["Option A", "Option B", "Option C", "Option D"],
+          "correct_index": 0
+        }}
+      ]
+    }}
+
+    Don't add any explanation text outside JSON.
+    Text:
+    {text}
+    """
+
+    raw = ask_ai(prompt)
+
+    # JSON extract
+    start = raw.find("{")
+    end = raw.rfind("}")
+    if start == -1 or end == -1:
+        return []
+
+    json_str = raw[start:end+1]
+
+    try:
+        data = json.loads(json_str)
+        return data.get("mcqs", [])
+    except Exception:
+        return []
+
+
+def generate_notes(text: str) -> str:
+    """
+    Chhote, clean study notes banata hai.
+    """
+
+    prompt = f"""
+    Create short study notes for the following content.
+
+    Rules:
+    - Use 5 to 8 bullet points.
+    - Use very simple language.
+    - Highlight important terms with **bold**.
+    - Output should be in Markdown.
+
+    Text:
+    {text}
+    """
+
+    return ask_ai(prompt)
