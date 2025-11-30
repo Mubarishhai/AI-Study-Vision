@@ -1,7 +1,7 @@
 import os
 import requests
 
-DEEPINFRA_KEY = os.getenv("DEEPINFRA_KEY")  # ya jo bhi env var use kar rahe ho
+DEEPINFRA_KEY = os.getenv("DEEPINFRA_API_KEY")  # ya jo bhi env var use kar rahe ho
 BASE_URL = "https://api.deepinfra.com/v1/openai/chat/completions"
 
 def ask_ai(prompt: str) -> str:
